@@ -116,6 +116,9 @@ const PropertyDetail: React.FC<PropertyDetailProps> = ({ property }) => {
           </div>
         </div>
       </div>
+
+      {/* Reviews Section */}
+      <ReviewSection propertyId={property.id} />
     </div>
   );
 };
