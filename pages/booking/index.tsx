@@ -1,41 +1,217 @@
-// pages/booking/index.tsx
+import axios from "axios";
+import { useState } from "react";
 
-// Import the components we'll use on this page.
-// The '@/' is a shortcut that means "start from the root of our project".
-import BookingForm from "@/components/booking/BookingForm";
-import OrderSummary from "@/components/booking/OrderSummary";
-import CancellationPolicy from "@/components/booking/CancellationPolicy"; // We'll add this component later
+export default function BookingForm() {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+    cardNumber: "",
+    expirationDate: "",
+    cvv: "",
+    billingAddress: "",
+  });
 
-// This is our main BookingPage component.
-// It's like the main assembly line where all the parts come together.
-export default function BookingPage() {
-  // These are some example details for our booking.
-  // In a real app, this information would come from a server or a previous page.
-  const bookingDetails = {
-    propertyName: "Villa Arrecife Beach House", // Name of the place being booked
-    price: 7500, // Price per night (or total, depends on context, but here assumed per total nights)
-    bookingFee: 65, // An extra fee for booking
-    totalNights: 3, // How many nights the booking is for
-    startDate: "24 August 2024", // When the booking starts
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  return (
-    // This is the main container for our page.
-    // 'container mx-auto p-6' makes sure it's centered and has some space around it.
-    <div className="container mx-auto p-6">
-      {/* This 'grid' layout helps us arrange items side-by-side or stacked on smaller screens.
-          'grid-cols-2' means two columns on larger screens.
-          'gap-6' adds space between the columns. */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Added md:grid-cols-2 for responsiveness */}
-        {/* Here we put our BookingForm component. */}
-        <BookingForm />
-        {/* Here we put our OrderSummary component and pass it the bookingDetails. */}
-        <OrderSummary bookingDetails={bookingDetails} />
-      </div>
+  const validateForm = () => {
+    const required = ['firstName', 'lastName', 'email', 'phoneNumber', 'cardNumber', 'expirationDate', 'cvv', 'billingAddress'];
+    for (const field of required) {
+      if (!formData[field as keyof typeof formData]) {
+        setError(`${field.replace(/([A-Z])/g, ' $1').toLowerCase()} is required`);
+        return false;
+      }
+    }
+    return true;
+  };
 
-      {/* Add the CancellationPolicy component below the form and summary. */}
-      {/* This will appear below the main grid layout. */}
-      <CancellationPolicy />
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await axios.post("/api/bookings", formData);
+      setSuccess(true);
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phoneNumber: "",
+        cardNumber: "",
+        expirationDate: "",
+        cvv: "",
+        billingAddress: "",
+      });
+    } catch (error) {
+      console.error("Booking submission error:", error);
+      setError("Failed to submit booking. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+          <div className="text-green-600 text-5xl mb-4">✓</div>
+          <h2 className="text-2xl font-bold text-green-800 mb-2">Booking Confirmed!</h2>
+          <p className="text-green-700">Your reservation has been successfully submitted.</p>
+          <button 
+            onClick={() => setSuccess(false)}
+            className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+          >
+            Make Another Booking
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Complete Your Booking</h1>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Guest Information */}
+        <div className="bg-white rounded-lg border p-6">
+          <h2 className="text-xl font-semibold mb-4">Guest Information</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">First Name</label>
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Last Name</label>
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Phone Number</label>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Information */}
+        <div className="bg-white rounded-lg border p-6">
+          <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
+          <div>
+            <label className="block text-sm font-medium mb-2">Card Number</label>
+            <input
+              type="text"
+              name="cardNumber"
+              value={formData.cardNumber}
+              onChange={handleChange}
+              placeholder="1234 5678 9012 3456"
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Expiration Date</label>
+              <input
+                type="text"
+                name="expirationDate"
+                value={formData.expirationDate}
+                onChange={handleChange}
+                placeholder="MM/YY"
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">CVV</label>
+              <input
+                type="text"
+                name="cvv"
+                value={formData.cvv}
+                onChange={handleChange}
+                placeholder="123"
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <label className="block text-sm font-medium mb-2">Billing Address</label>
+            <input
+              type="text"
+              name="billingAddress"
+              value={formData.billingAddress}
+              onChange={handleChange}
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-600">{error}</p>
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-red-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          {loading ? "Processing..." : "Confirm & Pay"}
+        </button>
+      </form>
     </div>
   );
 }
